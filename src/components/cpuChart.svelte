@@ -46,10 +46,11 @@
 				chart.destroy(); // Destroy the previous instance before creating a new one
 			}
 
+			//console.log(metrics);
 			// Filter metrics based on selected processes
-			const filteredMetrics = metrics.filter((metric) =>
-				selectedProcesses.includes(metric.processName)
-			);
+			const filteredMetrics = metrics.filter((metric) => {
+				return selectedProcesses.includes(metric.processName);
+			});
 
 			// Aggregate CPU usage by processName
 			const cpuUsageByProcess = filteredMetrics.reduce((acc, metric) => {
@@ -97,11 +98,11 @@
 							type: 'time',
 							time: {
 								unit: 'minute',
-								tooltipFormat: 'HH:mm',
-								stepSize: 10
+								tooltipFormat: 'HH:mm'
+								// stepSize: 1
 							},
 							ticks: {
-								maxTicksLimit: 10
+								// maxTicksLimit: 10
 							},
 							title: {
 								display: true,
@@ -142,7 +143,7 @@
 					devices: ['angelo'],
 					timeRange: {
 						start: '2024-06-25T00:00:00Z',
-						end: '2024-06-28T23:59:59Z'
+						end: '2024-06-30T23:59:59Z'
 					},
 					metrics: {
 						cpuLevel: 29.4
@@ -164,6 +165,7 @@
 			}
 			metrics = await response.json();
 
+			console.log(metrics);
 			// Initialize chart after metrics are fetched
 			initializeChart();
 		} catch (error) {
