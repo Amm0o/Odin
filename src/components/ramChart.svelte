@@ -46,33 +46,34 @@
 				chart.destroy(); // Destroy the previous instance before creating a new one
 			}
 
+			//console.log(metrics);
 			// Filter metrics based on selected processes
 			const filteredMetrics = metrics.filter((metric) => {
 				return selectedProcesses.includes(metric.processName);
 			});
 
 			// Aggregate CPU usage by processName
-			const cpuUsageByProcess = filteredMetrics.reduce((acc, metric) => {
-				metric.metrics.forEach(({ processName, processCpuUsage, timestamp }) => {
+			const ramUsageByProcess = filteredMetrics.reduce((acc, metric) => {
+				metric.metrics.forEach(({ processName, processRamUsage, timestamp }) => {
 					if (!acc[processName]) {
 						acc[processName] = [];
 					}
-					acc[processName].push({ cpuUsage: processCpuUsage, timestamp });
+					acc[processName].push({ ramUsage: processRamUsage, timestamp });
 				});
 				return acc;
 			}, {});
 
 			// Create datasets for each process
-			const datasets = Object.keys(cpuUsageByProcess).map((processName) => ({
+			const datasets = Object.keys(ramUsageByProcess).map((processName) => ({
 				label: processName,
-				data: cpuUsageByProcess[processName].map((entry) => entry.cpuUsage),
+				data: ramUsageByProcess[processName].map((entry) => entry.ramUsage),
 				fill: false,
 				borderColor: getRandomColor(), // Define a function to generate random colors
 				tension: 0.1
 			}));
 
 			// Assuming timestamps are consistent across all processes, use the first process's timestamps for labels
-			const labels = cpuUsageByProcess[Object.keys(cpuUsageByProcess)[0]].map(
+			const labels = ramUsageByProcess[Object.keys(ramUsageByProcess)[0]].map(
 				(entry) => entry.timestamp
 			);
 
@@ -90,7 +91,7 @@
 							beginAtZero: true,
 							title: {
 								display: true,
-								text: 'CPU Usage (%)'
+								text: 'RAM Usage (MB)'
 							}
 						},
 						x: {
@@ -138,11 +139,11 @@
 			const requestBody = {
 				tenantID: '6a63b790-eead-4e12-869c-2ca3a9da650d',
 				query: {
-					numberOfProcesses: 0,
+					numberOfProcesses: 1,
 					devices: ['angelo'],
 					timeRange: {
 						start: '2024-06-25T00:00:00Z',
-						end: '2024-06-30T23:59:59Z'
+						end: '2024-07-30T23:59:59Z'
 					},
 					metrics: {
 						cpuLevel: 29.4
@@ -150,7 +151,7 @@
 				}
 			};
 
-			const response = await fetch('http://localhost:8080/api/v1/cpumetrics', {
+			const response = await fetch('http://localhost:8080/api/v1/rammetrics', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -164,6 +165,7 @@
 			}
 			metrics = await response.json();
 
+			console.log(metrics);
 			// Initialize chart after metrics are fetched
 			initializeChart();
 		} catch (error) {
