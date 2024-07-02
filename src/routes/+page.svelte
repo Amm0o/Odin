@@ -1,9 +1,7 @@
 <script>
-	import CpuChart from '../components/cpuChart.svelte';
-	import RamChart from '../components/ramChart.svelte';
+	import CpuChart from '$lib/components/CpuChart.svelte';
+	import RamChart from '$lib/components/RamChart.svelte';
 </script>
-
-<h1>Cloud Vigilante</h1>
 
 <CpuChart />
 <RamChart />

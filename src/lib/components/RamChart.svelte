@@ -52,7 +52,7 @@
 				return selectedProcesses.includes(metric.processName);
 			});
 
-			// Aggregate CPU usage by processName
+			// Aggregate RAM usage by processName
 			const ramUsageByProcess = filteredMetrics.reduce((acc, metric) => {
 				metric.metrics.forEach(({ processName, processRamUsage, timestamp }) => {
 					if (!acc[processName]) {
@@ -144,9 +144,6 @@
 					timeRange: {
 						start: '2024-06-25T00:00:00Z',
 						end: '2024-07-30T23:59:59Z'
-					},
-					metrics: {
-						cpuLevel: 29.4
 					}
 				}
 			};
