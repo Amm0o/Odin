@@ -12,15 +12,34 @@
 	let isDropdownOpen = false;
 
 	$: if (metrics) {
-		allProcesses = metrics.map((metric) => metric.processName);
+		const processSet = new Set();
+		metrics.forEach((group) => {
+			group.metrics.forEach((metric) => {
+				const processKey = `${group.processName}(${metric.processPID})`; // Unique identifier for each process
+				if (!processSet.has(processKey)) {
+					allProcesses.push({
+						processName: group.processName,
+						processPID: metric.processPID
+					});
+					processSet.add(processKey);
+				}
+			});
+		});
 	}
 
-	function handleProcessToggle(processName) {
-		const index = selectedProcesses.indexOf(processName);
+	function handleProcessToggle(process) {
+		const processKey = `${process.processName}(${process.processPID})`; // Match the unique identifier format
+		const index = selectedProcesses.findIndex(
+			(selectedProcess) =>
+				`${selectedProcess.processName}(${selectedProcess.processPID})` === processKey
+		);
 		if (index > -1) {
 			selectedProcesses.splice(index, 1);
 		} else {
-			selectedProcesses.push(processName);
+			selectedProcesses.push({
+				processName: process.processName,
+				processPID: process.processPID
+			});
 		}
 		initializeChart();
 	}
@@ -29,7 +48,6 @@
 		isDropdownOpen = !isDropdownOpen;
 	}
 
-	// create function to generate random colors
 	function getRandomColor() {
 		const letters = '0123456789ABCDEF';
 		let color = '#';
@@ -42,90 +60,40 @@
 	function initializeChart() {
 		if (metrics.length > 0 && chartContainer) {
 			ctx = chartContainer.getContext('2d');
-			if (chart) {
-				chart.destroy(); // Destroy the previous instance before creating a new one
-			}
+			if (chart) chart.destroy();
 
-			// Filter metrics based on selected processes
-			const filteredMetrics = metrics.filter((metric) => {
-				return selectedProcesses.includes(metric.processName);
-			});
+			const filteredMetrics = metrics.filter((group) =>
+				selectedProcesses.some(
+					(selectedProcess) =>
+						selectedProcess.processPID === group.processPID &&
+						selectedProcess.processName === group.processName
+				)
+			);
 
-			// Aggregate CPU usage by processName
-			const cpuUsageByProcess = filteredMetrics.reduce((acc, metric) => {
-				metric.metrics.forEach(({ processName, processCpuUsage, timestamp }) => {
-					if (!acc[processName]) {
-						acc[processName] = [];
-					}
-					acc[processName].push({ cpuUsage: processCpuUsage, timestamp });
-				});
-				return acc;
-			}, {});
-
-			// Create datasets for each process
-			const datasets = Object.keys(cpuUsageByProcess).map((processName) => ({
-				label: processName,
-				data: cpuUsageByProcess[processName].map((entry) => entry.cpuUsage),
+			const datasets = filteredMetrics.map((group) => ({
+				label: `${group.processName}(${group.processPID})`,
+				data: group.metrics.map(({ processCpuUsage }) => processCpuUsage),
 				fill: false,
-				borderColor: getRandomColor(), // Define a function to generate random colors
+				borderColor: getRandomColor(),
 				tension: 0.1
 			}));
 
-			// Assuming timestamps are consistent across all processes, use the first process's timestamps for labels
-			const labels = cpuUsageByProcess[Object.keys(cpuUsageByProcess)[0]].map(
-				(entry) => entry.timestamp
+			const labels = filteredMetrics[0]?.metrics.map(
+				({ timestamp }) => timestamp || 'Undefined Timestamp'
 			);
 
 			chart = new Chart(ctx, {
 				type: 'line',
-				data: {
-					labels,
-					datasets
-				},
+				data: { labels, datasets },
 				options: {
-					responsive: true, // This makes the chart responsive
-					maintainAspectRatio: false, // Optional: if you want the chart to resize in both dimensions without maintaining the original aspect ratio
+					responsive: true,
+					maintainAspectRatio: false,
 					scales: {
-						y: {
-							beginAtZero: true,
-							title: {
-								display: true,
-								text: 'CPU Usage (%)'
-							}
-						},
+						y: { beginAtZero: true, title: { display: true, text: 'CPU Usage (%)' } },
 						x: {
 							type: 'time',
-							time: {
-								unit: 'minute',
-								tooltipFormat: 'HH:mm'
-								// stepSize: 1
-							},
-							ticks: {
-								// maxTicksLimit: 10
-							},
-							title: {
-								display: true,
-								text: 'Time'
-							}
-						}
-					}
-				},
-				tooltips: {
-					enabled: true,
-					mode: 'index',
-					intersect: false,
-					callbacks: {
-						label: function (tooltipItem, data) {
-							let label = data.datasets[tooltipItem.datasetIndex].label || '';
-							if (label) {
-								label += ': ';
-							}
-							label += tooltipItem.yLabel;
-							return label;
-						},
-						afterLabel: function (tooltipItem, data) {
-							const timestamp = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index].x;
-							return `Timestamp: ${moment(timestamp).format('MMM D, YYYY HH:mm')}`; // Format timestamp
+							time: { unit: 'minute', tooltipFormat: 'HH:mm' },
+							title: { display: true, text: 'Time' }
 						}
 					}
 				}
@@ -165,7 +133,7 @@
 			metrics = await response.json();
 
 			// Initialize chart after metrics are fetched
-			initializeChart();
+			// initializeChart();
 		} catch (error) {
 			console.error('Error fetching metrics:', error);
 		}
@@ -185,10 +153,12 @@
 				<label>
 					<input
 						type="checkbox"
-						checked={selectedProcesses.includes(process)}
+						checked={selectedProcesses.find(
+							(selectedProcess) => selectedProcess.processPID === process.processPID
+						)}
 						on:change={() => handleProcessToggle(process)}
 					/>
-					{process}
+					{process.processName}({process.processPID})
 				</label>
 			{/each}
 		</div>
