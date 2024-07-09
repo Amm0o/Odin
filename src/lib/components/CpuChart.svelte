@@ -10,43 +10,58 @@
 	let selectedProcesses = []; // Tracks selected processes
 	let allProcesses = []; // List of all processes to populate the dropdown
 	let isDropdownOpen = false;
+	let processDropdowns = new Map();
+
 
 	$: if (metrics) {
-		const processSet = new Set();
+		const processMap = new Map();
+
 		metrics.forEach((group) => {
 			group.metrics.forEach((metric) => {
-				const processKey = `${group.processName}(${metric.processPID})`; // Unique identifier for each process
-				if (!processSet.has(processKey)) {
-					allProcesses.push({
-						processName: group.processName,
-						processPID: metric.processPID
-					});
-					processSet.add(processKey);
+				const processName = group.processName;
+				const processPID = metric.processPID;
+
+				if (!processMap.has(processName)) {
+					processMap.set(processName, new Set());
 				}
+
+				processMap.get(processName).add(processPID);
 			});
 		});
+
+
+		// Convert the map to the desired structure
+		processMap.forEach((pids, processName) => {
+			allProcesses.push({
+				processName,
+				pids: Array.from(pids)
+			});
+		});
+
 	}
 
-	function handleProcessToggle(process) {
-		const processKey = `${process.processName}(${process.processPID})`; // Match the unique identifier format
+	function handleProcessToggle(processName, processPID) {
 		const index = selectedProcesses.findIndex(
-			(selectedProcess) =>
-				`${selectedProcess.processName}(${selectedProcess.processPID})` === processKey
-		);
-		if (index > -1) {
-			selectedProcesses.splice(index, 1);
-		} else {
-			selectedProcesses.push({
-				processName: process.processName,
-				processPID: process.processPID
-			});
-		}
+            (selectedProcess) => selectedProcess.processName === processName && selectedProcess.processPID === processPID
+        );
+
+        if (index === -1) {
+            selectedProcesses = [...selectedProcesses, { processName, processPID }];
+        } else {
+            selectedProcesses = selectedProcesses.filter(
+                (selectedProcess) => !(selectedProcess.processName === processName && selectedProcess.processPID === processPID)
+            );
+        }
 		initializeChart();
 	}
 
 	function toggleDropdown() {
 		isDropdownOpen = !isDropdownOpen;
 	}
+
+	function toggleProcessDropdown(processName) {
+        processDropdowns.set(processName, !processDropdowns.get(processName));
+    }
 
 	function getRandomColor() {
 		const letters = '0123456789ABCDEF';
@@ -104,13 +119,13 @@
 	async function fetchMetrics() {
 		try {
 			const requestBody = {
-				tenantID: '6a63b790-eead-4e12-869c-2ca3a9da650d',
+				tenantID: 'c6b06d8d-cc92-4f26-8c44-b348a416fffd',
 				query: {
 					numberOfProcesses: 0,
-					devices: ['angelo'],
+					devices: [],
 					timeRange: {
 						start: '2024-06-25T00:00:00Z',
-						end: '2024-06-30T23:59:59Z'
+						end: '2024-07-30T23:59:59Z'
 					},
 					metrics: {
 						cpuLevel: 29.4
@@ -132,8 +147,6 @@
 			}
 			metrics = await response.json();
 
-			// Initialize chart after metrics are fetched
-			// initializeChart();
 		} catch (error) {
 			console.error('Error fetching metrics:', error);
 		}
@@ -150,16 +163,23 @@
 	{#if isDropdownOpen}
 		<div class="dropdown-content">
 			{#each allProcesses as process}
-				<label>
-					<input
-						type="checkbox"
-						checked={selectedProcesses.find(
-							(selectedProcess) => selectedProcess.processPID === process.processPID
-						)}
-						on:change={() => handleProcessToggle(process)}
-					/>
-					{process.processName}({process.processPID})
-				</label>
+				<div>
+					<strong>{process.processName}</strong>
+					<div class="nested-dropdown">
+						{#each process.pids as pid}
+							<label>
+								<input
+									type="checkbox"
+									checked={selectedProcesses.find(
+										(selectedProcess) => selectedProcess.processName === process.processName && selectedProcess.processPID === pid
+									)}
+									on:change={() => handleProcessToggle(process.processName, pid)}
+								/>
+								{pid}
+							</label>
+						{/each}
+					</div>
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -188,4 +208,8 @@
 		padding: 12px;
 		z-index: 1;
 	}
+
+	.nested-dropdown {
+        margin-left: 20px;
+    }
 </style>

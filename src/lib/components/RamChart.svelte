@@ -137,10 +137,10 @@
 	async function fetchMetrics() {
 		try {
 			const requestBody = {
-				tenantID: '6a63b790-eead-4e12-869c-2ca3a9da650d',
+				tenantID: 'c6b06d8d-cc92-4f26-8c44-b348a416fffd',
 				query: {
 					numberOfProcesses: 1,
-					devices: ['angelo'],
+					devices: [],
 					timeRange: {
 						start: '2024-06-25T00:00:00Z',
 						end: '2024-07-30T23:59:59Z'
