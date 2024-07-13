@@ -12,7 +12,6 @@
 	let isDropdownOpen = false;
 	let processDropdowns = new Map();
 
-
 	$: if (metrics) {
 		const processMap = new Map();
 
@@ -29,7 +28,6 @@
 			});
 		});
 
-
 		// Convert the map to the desired structure
 		processMap.forEach((pids, processName) => {
 			allProcesses.push({
@@ -37,21 +35,24 @@
 				pids: Array.from(pids)
 			});
 		});
-
 	}
 
 	function handleProcessToggle(processName, processPID) {
 		const index = selectedProcesses.findIndex(
-            (selectedProcess) => selectedProcess.processName === processName && selectedProcess.processPID === processPID
-        );
+			(selectedProcess) =>
+				selectedProcess.processName === processName && selectedProcess.processPID === processPID
+		);
 
-        if (index === -1) {
-            selectedProcesses = [...selectedProcesses, { processName, processPID }];
-        } else {
-            selectedProcesses = selectedProcesses.filter(
-                (selectedProcess) => !(selectedProcess.processName === processName && selectedProcess.processPID === processPID)
-            );
-        }
+		if (index === -1) {
+			selectedProcesses = [...selectedProcesses, { processName, processPID }];
+		} else {
+			selectedProcesses = selectedProcesses.filter(
+				(selectedProcess) =>
+					!(
+						selectedProcess.processName === processName && selectedProcess.processPID === processPID
+					)
+			);
+		}
 		initializeChart();
 	}
 
@@ -60,8 +61,8 @@
 	}
 
 	function toggleProcessDropdown(processName) {
-        processDropdowns.set(processName, !processDropdowns.get(processName));
-    }
+		processDropdowns.set(processName, !processDropdowns.get(processName));
+	}
 
 	function getRandomColor() {
 		const letters = '0123456789ABCDEF';
@@ -119,7 +120,7 @@
 	async function fetchMetrics() {
 		try {
 			const requestBody = {
-				tenantID: 'c6b06d8d-cc92-4f26-8c44-b348a416fffd',
+				tenantID: '6a63b790-eead-4e12-869c-2ca3a9da650d',
 				query: {
 					numberOfProcesses: 0,
 					devices: [],
@@ -146,7 +147,6 @@
 				return;
 			}
 			metrics = await response.json();
-
 		} catch (error) {
 			console.error('Error fetching metrics:', error);
 		}
@@ -171,7 +171,9 @@
 								<input
 									type="checkbox"
 									checked={selectedProcesses.find(
-										(selectedProcess) => selectedProcess.processName === process.processName && selectedProcess.processPID === pid
+										(selectedProcess) =>
+											selectedProcess.processName === process.processName &&
+											selectedProcess.processPID === pid
 									)}
 									on:change={() => handleProcessToggle(process.processName, pid)}
 								/>
@@ -210,6 +212,6 @@
 	}
 
 	.nested-dropdown {
-        margin-left: 20px;
-    }
+		margin-left: 20px;
+	}
 </style>
