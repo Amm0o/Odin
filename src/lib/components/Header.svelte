@@ -3,6 +3,7 @@
 	<nav>
 		<a href="/device-inventory" class="links" style="text-decoration: none;">Device Inventory</a>
 		<a href="/" class="links" style="text-decoration: none;">Metrics</a>
+		<a href="/onboard" class="links" style="text-decoration: none;">Onboard</a>
 	</nav>
 	<div class="logout">
 		<a href="/logout" style="text-decoration: none; color: white;">Logout</a>
