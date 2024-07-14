@@ -11,6 +11,13 @@
 	let allProcesses = []; // List of all processes to populate the dropdown
 	let isDropdownOpen = false;
 	let processDropdowns = new Map();
+	let isSettingsOpen = false; // Tracks if the settings menu is open
+
+	// Query parameters inputs
+	let numberOfProcesses = 1;
+	let devices = '';
+	let startTime = '2024-06-25T00:00:00Z';
+	let endTime = '2024-07-30T23:59:59Z';
 
 	$: if (metrics) {
 		const processMap = new Map();
@@ -56,12 +63,12 @@
 		initializeChart();
 	}
 
-	function toggleDropdown() {
-		isDropdownOpen = !isDropdownOpen;
+	function toggleSettings() {
+		isSettingsOpen = !isSettingsOpen;
 	}
 
-	function toggleProcessDropdown(processName) {
-		processDropdowns.set(processName, !processDropdowns.get(processName));
+	function toggleDropdown() {
+		isDropdownOpen = !isDropdownOpen;
 	}
 
 	function getRandomColor() {
@@ -119,17 +126,19 @@
 
 	async function fetchMetrics() {
 		try {
+			if (devices != '') {
+				devices = devices.split(',').map((device) => device.trim());
+			} else {
+				devices = [];
+			}
 			const requestBody = {
 				tenantID: '6a63b790-eead-4e12-869c-2ca3a9da650d',
 				query: {
-					numberOfProcesses: 0,
-					devices: [],
+					numberOfProcesses,
+					devices: devices,
 					timeRange: {
-						start: '2024-06-25T00:00:00Z',
-						end: '2024-07-30T23:59:59Z'
-					},
-					metrics: {
-						cpuLevel: 29.4
+						start: startTime,
+						end: endTime
 					}
 				}
 			};
@@ -152,46 +161,82 @@
 		}
 	}
 
+	async function applySettings() {
+		await fetchMetrics();
+	}
+
 	onMount(() => {
 		fetchMetrics();
 	});
 </script>
 
-<!-- Render checkboxes for each process -->
-<div class="dropdown">
-	<button on:click={toggleDropdown}>Select Processes</button>
-	{#if isDropdownOpen}
-		<div class="dropdown-content">
-			{#each allProcesses as process}
-				<div>
-					<strong>{process.processName}</strong>
-					<div class="nested-dropdown">
-						{#each process.pids as pid}
-							<label>
-								<input
-									type="checkbox"
-									checked={selectedProcesses.find(
-										(selectedProcess) =>
-											selectedProcess.processName === process.processName &&
-											selectedProcess.processPID === pid
-									)}
-									on:change={() => handleProcessToggle(process.processName, pid)}
-								/>
-								{pid}
-							</label>
-						{/each}
+<div class="page-wrapper">
+	<!-- Render checkboxes for each process -->
+	<div class="dropdown">
+		<button on:click={toggleDropdown}>Select Processes</button>
+		{#if isDropdownOpen}
+			<div class="dropdown-content">
+				{#each allProcesses as process}
+					<div>
+						<strong>{process.processName}</strong>
+						<div class="nested-dropdown">
+							{#each process.pids as pid}
+								<label>
+									<input
+										type="checkbox"
+										checked={selectedProcesses.find(
+											(selectedProcess) =>
+												selectedProcess.processName === process.processName &&
+												selectedProcess.processPID === pid
+										)}
+										on:change={() => handleProcessToggle(process.processName, pid)}
+									/>
+									{pid}
+								</label>
+							{/each}
+						</div>
 					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
+				{/each}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Settings menu for user input -->
+	<div class="settings">
+		<button on:click={toggleSettings}>Filters</button>
+		{#if isSettingsOpen}
+			<div class="settings-content">
+				<label>
+					Number of Processes:
+					<input type="number" bind:value={numberOfProcesses} min="1" />
+				</label>
+				<label>
+					Devices (comma separated):
+					<input type="text" bind:value={devices} />
+				</label>
+				<label>
+					Start Time:
+					<input type="datetime-local" bind:value={startTime} />
+				</label>
+				<label>
+					End Time:
+					<input type="datetime-local" bind:value={endTime} />
+				</label>
+				<button on:click={applySettings}>Apply</button>
+			</div>
+		{/if}
+	</div>
+
+	<section>
+		<canvas bind:this={chartContainer}></canvas>
+	</section>
 </div>
 
-<section>
-	<canvas bind:this={chartContainer}></canvas>
-</section>
-
 <style>
+	.page-wrapper {
+		padding: 2.5rem;
+	}
+
 	canvas {
 		height: 400px; /* Example height */
 		width: 100%; /* Example width */
@@ -202,6 +247,9 @@
 		display: inline-block;
 	}
 	.dropdown-content {
+		max-height: 200px; /* Adjust the height as needed */
+		overflow-y: auto; /* Enables vertical scrolling */
+		overflow-x: hidden; /* Hides horizontal scrollbar */
 		display: block;
 		position: absolute;
 		background-color: #f9f9f9;

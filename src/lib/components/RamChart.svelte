@@ -10,6 +10,13 @@
 	let selectedProcesses = []; // Tracks selected processes
 	let allProcesses = []; // List of all processes to populate the dropdown
 	let isDropdownOpen = false;
+	let isSettingsOpen = false; // Tracks if the settings menu is open
+
+	// Query parameters inputs
+	let numberOfProcesses = 1;
+	let devices = '';
+	let startTime = '2024-06-25T00:00:00Z';
+	let endTime = '2024-07-30T23:59:59Z';
 
 	$: if (metrics) {
 		allProcesses = metrics.map((metric) => metric.processName);
@@ -29,6 +36,10 @@
 		isDropdownOpen = !isDropdownOpen;
 	}
 
+	function toggleSettings() {
+		isSettingsOpen = !isSettingsOpen;
+	}
+
 	// create function to generate random colors
 	function getRandomColor() {
 		const letters = '0123456789ABCDEF';
@@ -46,7 +57,6 @@
 				chart.destroy(); // Destroy the previous instance before creating a new one
 			}
 
-			//console.log(metrics);
 			// Filter metrics based on selected processes
 			const filteredMetrics = metrics.filter((metric) => {
 				return selectedProcesses.includes(metric.processName);
@@ -68,11 +78,10 @@
 				label: processName,
 				data: ramUsageByProcess[processName].map((entry) => entry.ramUsage),
 				fill: false,
-				borderColor: getRandomColor(), // Define a function to generate random colors
+				borderColor: getRandomColor(),
 				tension: 0.1
 			}));
 
-			// Assuming timestamps are consistent across all processes, use the first process's timestamps for labels
 			const labels = ramUsageByProcess[Object.keys(ramUsageByProcess)[0]].map(
 				(entry) => entry.timestamp
 			);
@@ -85,7 +94,7 @@
 				},
 				options: {
 					responsive: true, // This makes the chart responsive
-					maintainAspectRatio: false, // Optional: if you want the chart to resize in both dimensions without maintaining the original aspect ratio
+					maintainAspectRatio: false, // This makes the chart not maintain aspect ratio
 					scales: {
 						y: {
 							beginAtZero: true,
@@ -136,14 +145,19 @@
 
 	async function fetchMetrics() {
 		try {
+			if (devices != '') {
+				devices = devices.split(',').map((device) => device.trim());
+			} else {
+				devices = [];
+			}
 			const requestBody = {
 				tenantID: '6a63b790-eead-4e12-869c-2ca3a9da650d',
 				query: {
-					numberOfProcesses: 1,
-					devices: [],
+					numberOfProcesses,
+					devices: devices,
 					timeRange: {
-						start: '2024-06-25T00:00:00Z',
-						end: '2024-07-30T23:59:59Z'
+						start: startTime,
+						end: endTime
 					}
 				}
 			};
@@ -162,7 +176,6 @@
 			}
 			metrics = await response.json();
 
-			console.log(metrics);
 			// Initialize chart after metrics are fetched
 			initializeChart();
 		} catch (error) {
@@ -170,35 +183,70 @@
 		}
 	}
 
+	async function applySettings() {
+		await fetchMetrics();
+	}
+
 	onMount(() => {
 		fetchMetrics();
 	});
 </script>
 
-<!-- Render checkboxes for each process -->
-<div class="dropdown">
-	<button on:click={toggleDropdown}>Select Processes</button>
-	{#if isDropdownOpen}
-		<div class="dropdown-content">
-			{#each allProcesses as process}
+<div class="page-wrapper">
+	<!-- Render checkboxes for each process -->
+	<div class="dropdown">
+		<button on:click={toggleDropdown}>Select Processes</button>
+		{#if isDropdownOpen}
+			<div class="dropdown-content">
+				{#each allProcesses as process}
+					<label>
+						<input
+							type="checkbox"
+							checked={selectedProcesses.includes(process)}
+							on:change={() => handleProcessToggle(process)}
+						/>
+						{process}
+					</label>
+				{/each}
+			</div>
+		{/if}
+	</div>
+	<!-- Settings menu for user input -->
+	<div class="settings">
+		<button on:click={toggleSettings}>Filters</button>
+		{#if isSettingsOpen}
+			<div class="settings-content">
 				<label>
-					<input
-						type="checkbox"
-						checked={selectedProcesses.includes(process)}
-						on:change={() => handleProcessToggle(process)}
-					/>
-					{process}
+					Number of Processes:
+					<input type="number" bind:value={numberOfProcesses} min="1" />
 				</label>
-			{/each}
-		</div>
-	{/if}
+				<label>
+					Devices (comma separated):
+					<input type="text" bind:value={devices} />
+				</label>
+				<label>
+					Start Time:
+					<input type="datetime-local" bind:value={startTime} />
+				</label>
+				<label>
+					End Time:
+					<input type="datetime-local" bind:value={endTime} />
+				</label>
+				<button on:click={applySettings}>Apply</button>
+			</div>
+		{/if}
+	</div>
+
+	<section>
+		<canvas bind:this={chartContainer}></canvas>
+	</section>
 </div>
 
-<section>
-	<canvas bind:this={chartContainer}></canvas>
-</section>
-
 <style>
+	.page-wrapper {
+		padding: 3.5rem;
+	}
+
 	canvas {
 		height: 400px; /* Example height */
 		width: 100%; /* Example width */
