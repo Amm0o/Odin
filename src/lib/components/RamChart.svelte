@@ -162,7 +162,7 @@
 				}
 			};
 
-			const response = await fetch('http://localhost:8080/api/v1/rammetrics', {
+			const response = await fetch('http://cloudvigilante.anoliveira.com/api/v1/rammetrics', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

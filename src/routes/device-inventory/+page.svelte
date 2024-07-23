@@ -6,7 +6,7 @@
 	async function fetchDevices() {
 		try {
 			const response = await fetch(
-				'http://localhost:8080/api/v1/getdeviceinfo?tenantID=6a63b790-eead-4e12-869c-2ca3a9da650d',
+				'http://cloudvigilante.anoliveira.com/api/v1/getdeviceinfo?tenantID=6a63b790-eead-4e12-869c-2ca3a9da650d',
 				{
 					method: 'GET',
 					headers: {

@@ -3,6 +3,7 @@
 	import Chart from 'chart.js/auto';
 	import 'chartjs-adapter-date-fns';
 
+
 	let metrics = [];
 	let chartContainer;
 	let ctx;
@@ -143,7 +144,7 @@
 				}
 			};
 
-			const response = await fetch('http://localhost:8080/api/v1/cpumetrics', {
+			const response = await fetch('http://cloudvigilante.anoliveira.com/api/v1/cpumetrics', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
