@@ -6,7 +6,7 @@
 	// Fetching the onboarding script link
 	async function fetchOnboardingScript() {
 		try {
-			const response = await fetch('http://localhost:8080/api/v1/onboard-device');
+			const response = await fetch('http://cloudvigilante.anoliveira.com/api/v1/onboard-device');
 			if (!response.ok) {
 				console.error('Failed to fetch onboarding script:', response.statusText);
 				return;
